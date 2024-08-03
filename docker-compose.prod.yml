@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: django_app
+    command: gunicorn myproject.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - sqlite_db:/app/db.sqlite3
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf
+      - ./static:/app/static
+      - ./media:/app/media
+    depends_on:
+      - web
+
+  admin_bot:
+    build: .
+    container_name: admin_bot
+    command: python admin_bot.py
+    volumes:
+      - .:/app
+      - sqlite_db:/app/db.sqlite3
+
+  reservation_bot:
+    build: .
+    container_name: reservation_bot
+    command: python reservation_bot.py
+    volumes:
+      - .:/app
+      - sqlite_db:/app/db.sqlite3
+
+volumes:
+  sqlite_db:

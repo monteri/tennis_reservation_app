@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: django_app
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - sqlite_db:/app/db
+    ports:
+      - "8000:8000"
+
+  admin_bot:
+    build: .
+    container_name: admin_bot
+    command: python admin_bot.py
+    volumes:
+      - .:/app
+      - sqlite_db:/app/db
+
+  reservation_bot:
+    build: .
+    container_name: reservation_bot
+    command: python reservation_bot.py
+    volumes:
+      - .:/app
+      - sqlite_db:/app/db
+
+volumes:
+  sqlite_db:
