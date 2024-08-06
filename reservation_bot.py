@@ -264,7 +264,7 @@ async def notify_admins(reservation_id, name, date, time, duration, phone, usern
             print(f"Error notifying admin {chat_id}: {e}")
 
 async def cancel(update: Update, context: CallbackContext):
-    await update.message.reply_text("Процес бронювання скасовано.")
+    await update.message.reply_text("Процес бронювання скасовано. @!#")
     return ConversationHandler.END
 
 if __name__ == '__main__':
