@@ -105,7 +105,14 @@ async def select_time(update: Update, context: CallbackContext):
     today = datetime.today().date()
 
     if selected_date == today:
-        now = datetime.now().time()
+        now = datetime.now()
+        # Calculate the next half-hour slot
+        minutes = (now.minute // 30 + 1) * 30
+        if minutes == 60:
+            now = now.replace(hour=now.hour + 1, minute=0)
+        else:
+            now = now.replace(minute=minutes)
+
         earliest_time = max(now.hour * 60 + now.minute, 9 * 60)  # Start at 9:00 AM or the current time
     else:
         earliest_time = 9 * 60  # Start at 9:00 AM
