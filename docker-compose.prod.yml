@@ -5,6 +5,8 @@ services:
     build: .
     container_name: django_app
     command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env
     volumes:
       - .:/app
       - sqlite_db:/app/db
@@ -26,6 +28,8 @@ services:
     build: .
     container_name: admin_bot
     command: python admin_bot.py
+    env_file:
+      - .env
     volumes:
       - .:/app
       - sqlite_db:/app/db
@@ -34,6 +38,8 @@ services:
     build: .
     container_name: reservation_bot
     command: python reservation_bot.py
+    env_file:
+      - .env
     volumes:
       - .:/app
       - sqlite_db:/app/db

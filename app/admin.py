@@ -10,8 +10,8 @@ class AdminAdmin(admin.ModelAdmin):
 
 @admin.register(Reservation)
 class ReservationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_date', 'start_time', 'duration', 'username', 'phone', 'created_at')
-    search_fields = ('name', 'username', 'phone')
+    list_display = ('start_date', 'start_time', 'duration', 'username', 'text', 'created_at')
+    search_fields = ('username', 'text')
     list_filter = ('start_date', 'created_at')
 
 admin.site.register(AdminSession)

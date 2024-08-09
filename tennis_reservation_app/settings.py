@@ -20,10 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@ckfi=nif*&$^&!^p*c35@om!)7)wo9(mkr=!6(^#r69z#&ozs'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'default-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['195.189.226.141', 'localhost', '127.0.0.1', '0.0.0.0']
 
@@ -125,5 +125,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ADMIN_BOT_TOKEN = "7431992389:AAEOM73GWWCjVoXdWdnH4t8_NAMGiQPh0rw"
-RESERVATION_BOT_TOKEN = "7299772813:AAH-LYaAeJth6d6TQR-9gfL73nT2yypIkBE"
+ADMIN_BOT_TOKEN = os.getenv('ADMIN_BOT_TOKEN')
+RESERVATION_BOT_TOKEN = os.getenv('RESERVATION_BOT_TOKEN')

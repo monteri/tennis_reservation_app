@@ -13,16 +13,35 @@ from asgiref.sync import sync_to_async
 from app.models import Reservation, AdminSession
 from django.conf import settings
 
+# Custom day names in Ukrainian
+DAY_NAMES_UA = {
+    'Monday': 'Понеділок',
+    'Tuesday': 'Вівторок',
+    'Wednesday': 'Середа',
+    'Thursday': 'Четвер',
+    'Friday': 'Пʼятниця',
+    'Saturday': 'Субота',
+    'Sunday': 'Неділя',
+}
+
+# Duration to price mapping
+DURATION_TO_PRICE = {
+    60: 250,   # 1 hour
+    90: 375,   # 1.5 hours
+    120: 475,  # 2 hours
+    180: 675   # 3 hours
+}
+
 # States for conversation
 DURATION_SELECTION, DATE_SELECTION, TIME_SELECTION, NAME_PHONE, CONFIRMATION = range(5)
 
 async def start(update: Update, context: CallbackContext):
     keyboard = [
-        [InlineKeyboardButton("Забронювати", callback_data='start_reservation')]
+        [InlineKeyboardButton("Забронювати 🏓", callback_data='start_reservation')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        "Вас вітає Tennis bot. Ви можете забронювати стіл на бажаний час.",
+        "👋 Вас вітає Tennis bot. Ви можете забронювати стіл на бажаний час.",
         reply_markup=reply_markup
     )
 
@@ -31,20 +50,25 @@ async def start_reservation(update: Update, context: CallbackContext):
     await query.answer()
 
     durations = [
-        ("1 година - 250₴", "60"),
-        ("1,5 години - 375₴", "90"),
-        ("2 години - 475₴ (5% знижка)", "120"),
-        ("3 години - 675₴ (10% знижка)", "180"),
+        ("1 година - 250₴ ⏱️", "60"),
+        ("1,5 години - 375₴ ⏱️", "90"),
+        ("2 години - 475₴ ⏱️ (5% знижка)", "120"),
+        ("3 години - 675₴ ⏱️ (10% знижка)", "180"),
     ]
 
     keyboard = [[InlineKeyboardButton(text, callback_data=value)] for text, value in durations]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        "Оберіть тривалість:",
+        "⏳ Оберіть тривалість:",
         reply_markup=reply_markup
     )
     return DURATION_SELECTION
+
+def format_date_ua(date_obj):
+    # Format date as "09.08, Пʼятниця"
+    day_name = DAY_NAMES_UA[date_obj.strftime('%A')]
+    return date_obj.strftime(f'%d.%m, {day_name}')
 
 async def select_date(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -59,14 +83,19 @@ async def select_date(update: Update, context: CallbackContext):
         context.user_data['reservation_duration'] = int(query.data)
 
     today = datetime.today()
-    dates = [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(14)]
+    dates = [(today + timedelta(days=i)) for i in range(14)]
 
-    keyboard = [[InlineKeyboardButton(date, callback_data=date)] for date in dates]
+    keyboard = []
+    for date in dates:
+        formatted_date = format_date_ua(date)
+        callback_data = date.strftime("%Y-%m-%d")  # Use a standard date format for callback data
+        keyboard.append([InlineKeyboardButton(formatted_date, callback_data=callback_data)])
+
     keyboard.append([InlineKeyboardButton("⬅️ Назад", callback_data='back_to_duration')])  # Back button
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        "Оберіть дату (максимум 2 тижні у майбутньому):",
+        "📅 Оберіть дату (максимум 2 тижні у майбутньому):",
         reply_markup=reply_markup
     )
     return DATE_SELECTION
@@ -102,6 +131,7 @@ async def select_time(update: Update, context: CallbackContext):
     duration = context.user_data['reservation_duration']
 
     selected_date = datetime.strptime(context.user_data['reservation_date'], "%Y-%m-%d").date()
+    formatted_date = format_date_ua(selected_date)
     today = datetime.today().date()
 
     if selected_date == today:
@@ -134,7 +164,7 @@ async def select_time(update: Update, context: CallbackContext):
             available_times.append(f"{hours:02d}:{minutes:02d}")
 
     if not available_times:
-        await query.edit_message_text("На вибрану дату немає доступних часових слотів.")
+        await query.edit_message_text("⛔ На вибрану дату немає доступних часових слотів.")
         return ConversationHandler.END
 
     keyboard = [[InlineKeyboardButton(time, callback_data=time)] for time in available_times]
@@ -142,11 +172,10 @@ async def select_time(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        f"Оберіть час для {context.user_data['reservation_date']}:",
+        f"🕒 Оберіть час для {formatted_date}:",
         reply_markup=reply_markup
     )
     return TIME_SELECTION
-
 
 async def back_to_time_selection(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -178,7 +207,7 @@ async def back_to_time_selection(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        f"Оберіть час для {selected_date}:",
+        f"⏰ Оберіть час для {selected_date}:",
         reply_markup=reply_markup
     )
     return TIME_SELECTION
@@ -200,47 +229,55 @@ async def collect_name_phone(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        "Будь ласка, введіть ваше імʼя та номер телефону через кому (Наприклад: Андрій Шевченко, +380501234567):",
+        "📞 Будь ласка, введіть ваші контактні дані (Наприклад: Андрій Шевченко, +380501234567, коментар):",
         reply_markup=reply_markup
     )
     return NAME_PHONE
 
 @sync_to_async
-def create_reservation(date, time, duration, name, username, phone):
+def create_reservation(date, time, duration, text, username):
     return Reservation.objects.create(
         start_date=date,
         start_time=time,
         duration=duration,
-        name=name,
-        username=username,
-        phone=phone
+        text=text,
+        username=username
     )
 
 async def confirm_reservation(update: Update, context: CallbackContext):
     user_input = update.message.text
     try:
-        name, phone = [x.strip() for x in user_input.split(',')]
+        text = user_input.strip()
         username = update.message.from_user.username
+
+        # Get the selected duration
+        duration = context.user_data['reservation_duration']
+        # Determine the price based on the duration
+        price = DURATION_TO_PRICE.get(duration, 0)  # Default to 0 if not found
 
         reservation = await create_reservation(
             context.user_data['reservation_date'],
             context.user_data['reservation_time'],
-            context.user_data['reservation_duration'],
-            name,
-            username,
-            phone
+            duration,
+            text,
+            username
         )
 
         await update.message.reply_text(
-            "Ваше бронювання буде оброблене адміністратором та з вами зʼяжуться."
+            f"🏓 *Бронь столу:* {context.user_data['reservation_time']} \\- "
+            f"{(datetime.strptime(context.user_data['reservation_time'], '%H:%M') + timedelta(minutes=duration)).strftime('%H:%M')}\n"
+            f"💵 *До сплати:* {price} грн\n"
+            "💳 *Карта:* 5169155116940766\n\n"
+            "✅ Після оплати чекайте на підтвердження від адміністратора\\.",
+            parse_mode='MarkdownV2'
         )
 
         # Notify admin bot
-        await notify_admins(reservation.id, name, context.user_data['reservation_date'], context.user_data['reservation_time'], context.user_data['reservation_duration'], phone, username)
+        await notify_admins(reservation.id, context.user_data['reservation_date'], context.user_data['reservation_time'], duration, text, username)
 
     except ValueError:
         await update.message.reply_text(
-            "Неправильний формат. Будь ласка, введіть ваше імʼя та номер телефону через кому."
+            "⚠️ Неправильний формат. Будь ласка, введіть ваше імʼя та номер телефону через кому."
         )
         return NAME_PHONE
 
@@ -250,12 +287,14 @@ async def confirm_reservation(update: Update, context: CallbackContext):
 def get_admin_sessions():
     return list(AdminSession.objects.values_list('chat_id', flat=True))
 
-async def notify_admins(reservation_id, name, date, time, duration, phone, username):
-    message = f"Нове бронювання від {name} на {date} о {time} на {duration // 60} години. Телефон: {phone}. Telegram: @{username}"
+async def notify_admins(reservation_id, date, time, duration, text, username):
+    message = f"🔔 Нове бронювання на {date} о {time} на {duration / 60} години.\n"
+    message += f"📋 Контактні дані: {text}\n"
+    message += f"💬 Telegram: @{username}"
 
     keyboard = [
-        [InlineKeyboardButton("Confirm", callback_data=f'confirm_{reservation_id}'),
-         InlineKeyboardButton("Cancel", callback_data=f'cancel_{reservation_id}')]
+        [InlineKeyboardButton("✅ Confirm", callback_data=f'confirm_{reservation_id}'),
+         InlineKeyboardButton("❌ Cancel", callback_data=f'cancel_{reservation_id}')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -271,7 +310,7 @@ async def notify_admins(reservation_id, name, date, time, duration, phone, usern
             print(f"Error notifying admin {chat_id}: {e}")
 
 async def cancel(update: Update, context: CallbackContext):
-    await update.message.reply_text("Процес бронювання скасовано. @!#")
+    await update.message.reply_text("🚫 Процес бронювання скасовано.")
     return ConversationHandler.END
 
 if __name__ == '__main__':
