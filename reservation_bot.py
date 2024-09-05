@@ -235,14 +235,42 @@ async def collect_name_phone(update: Update, context: CallbackContext):
     return NAME_PHONE
 
 @sync_to_async
-def create_reservation(date, time, duration, text, username):
-    return Reservation.objects.create(
-        start_date=date,
-        start_time=time,
+def create_reservation(date, time_str, duration, text, username):
+    # Convert date and time_str to datetime objects
+    reservation_date = datetime.strptime(date, "%Y-%m-%d").date()
+    reservation_time = datetime.strptime(time_str, "%H:%M").time()
+    reservation_datetime = datetime.combine(reservation_date, reservation_time)
+
+    # Check if the reservation datetime is in the past
+    if reservation_datetime < datetime.now():
+        return None, "⛔ Ви не можете забронювати на минулу дату або час."
+
+    # Calculate end time of the new reservation
+    new_end_time = (reservation_datetime + timedelta(minutes=duration)).time()
+
+    # Fetch reservations on the same date to check for overlapping times
+    existing_reservations = Reservation.objects.filter(start_date=reservation_date)
+
+    for existing_reservation in existing_reservations:
+        # Calculate the end time of the existing reservation
+        existing_end_time = (datetime.combine(existing_reservation.start_date, existing_reservation.start_time) +
+                             timedelta(minutes=existing_reservation.duration)).time()
+
+        # Check for overlap: the start time of one is between the start and end of the other
+        if (existing_reservation.start_time <= reservation_time < existing_end_time) or \
+           (reservation_time <= existing_reservation.start_time < new_end_time):
+            return None, "⛔ На цей час вже існує бронювання. Будь ласка, оберіть інший час."
+
+    # If no overlaps and the date is valid, create the reservation
+    reservation = Reservation.objects.create(
+        start_date=reservation_date,
+        start_time=reservation_time,
         duration=duration,
         text=text,
         username=username
     )
+
+    return reservation, None
 
 async def confirm_reservation(update: Update, context: CallbackContext):
     user_input = update.message.text
@@ -255,7 +283,8 @@ async def confirm_reservation(update: Update, context: CallbackContext):
         # Determine the price based on the duration
         price = DURATION_TO_PRICE.get(duration, 0)  # Default to 0 if not found
 
-        reservation = await create_reservation(
+        # Try to create the reservation
+        reservation, error_message = await create_reservation(
             context.user_data['reservation_date'],
             context.user_data['reservation_time'],
             duration,
@@ -263,6 +292,12 @@ async def confirm_reservation(update: Update, context: CallbackContext):
             username
         )
 
+        if reservation is None:
+            # If there was an error in reservation creation (like overlap or past datetime)
+            await update.message.reply_text(error_message)
+            return NAME_PHONE
+
+        # If reservation was successfully created
         await update.message.reply_text(
             f"🏓 *Бронь столу:* {context.user_data['reservation_time']} \\- "
             f"{(datetime.strptime(context.user_data['reservation_time'], '%H:%M') + timedelta(minutes=duration)).strftime('%H:%M')}\n"
