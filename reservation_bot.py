@@ -301,7 +301,9 @@ async def confirm_reservation(update: Update, context: CallbackContext):
         reservation_date = datetime.strptime(context.user_data['reservation_date'], '%Y-%m-%d')
         # If reservation was successfully created
         await update.message.reply_text(
-            f"🏓 *Бронь столу:* {format_date_ua(reservation_date, escaped=True)} {context.user_data['reservation_time']} \\- "
+            f"🏓 *Бронь столу*\n\n"
+            f"📅 *Дата:* {format_date_ua(reservation_date, escaped=True)}\n"
+            f"🕔 *Час:* {context.user_data['reservation_time']} \\- "
             f"{(datetime.strptime(context.user_data['reservation_time'], '%H:%M') + timedelta(minutes=duration)).strftime('%H:%M')}\n"
             f"💵 *До сплати:* {price} грн\n"
             "💳 *Карта:* 5169155116940766\n\n"
