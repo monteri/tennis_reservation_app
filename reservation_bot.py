@@ -65,10 +65,11 @@ async def start_reservation(update: Update, context: CallbackContext):
     )
     return DURATION_SELECTION
 
-def format_date_ua(date_obj):
+def format_date_ua(date_obj, escaped=False):
     # Format date as "09.08, Пʼятниця"
     day_name = DAY_NAMES_UA[date_obj.strftime('%A')]
-    return date_obj.strftime(f'%d.%m, {day_name}')
+    date = date_obj.strftime(f'%d\.%m \({day_name}\)') if escaped else date_obj.strftime(f'%d.%m, {day_name}')
+    return date
 
 async def select_date(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -297,9 +298,10 @@ async def confirm_reservation(update: Update, context: CallbackContext):
             await update.message.reply_text(error_message)
             return NAME_PHONE
 
+        reservation_date = datetime.strptime(context.user_data['reservation_date'], '%Y-%m-%d')
         # If reservation was successfully created
         await update.message.reply_text(
-            f"🏓 *Бронь столу:* {context.user_data['reservation_time']} \\- "
+            f"🏓 *Бронь столу:* {format_date_ua(reservation_date, escaped=True)} {context.user_data['reservation_time']} \\- "
             f"{(datetime.strptime(context.user_data['reservation_time'], '%H:%M') + timedelta(minutes=duration)).strftime('%H:%M')}\n"
             f"💵 *До сплати:* {price} грн\n"
             "💳 *Карта:* 5169155116940766\n\n"
