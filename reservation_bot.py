@@ -52,8 +52,8 @@ async def start_reservation(update: Update, context: CallbackContext):
     durations = [
         ("1 година - 300₴ ⏱️", "60"),
         ("1,5 години - 450₴ ⏱️", "90"),
-        ("2 години - 550₴ ⏱️ (275 ₴/год)", "120"),
-        ("3 години - 750₴ ⏱️ (250 ₴/год)", "180"),
+        ("2 години - 550₴ ⏱️ (275 ₴/година)", "120"),
+        ("3 години - 750₴ ⏱️ (250 ₴/година)", "180"),
     ]
 
     keyboard = [[InlineKeyboardButton(text, callback_data=value)] for text, value in durations]
