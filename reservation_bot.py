@@ -26,10 +26,10 @@ DAY_NAMES_UA = {
 
 # Duration to price mapping
 DURATION_TO_PRICE = {
-    60: 250,   # 1 hour
-    90: 375,   # 1.5 hours
-    120: 475,  # 2 hours
-    180: 675   # 3 hours
+    60: 300,   # 1 hour
+    90: 450,   # 1.5 hours
+    120: 550,  # 2 hours
+    180: 750   # 3 hours
 }
 
 # States for conversation
