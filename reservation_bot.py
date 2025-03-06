@@ -306,7 +306,7 @@ async def confirm_reservation(update: Update, context: CallbackContext):
             f"🕔 *Час:* {context.user_data['reservation_time']} \\- "
             f"{(datetime.strptime(context.user_data['reservation_time'], '%H:%M') + timedelta(minutes=duration)).strftime('%H:%M')}\n"
             f"💵 *До сплати:* {price} грн\n"
-            "💳 *Карта:* 5169155116940766\n\n"
+            "💳 *Карта:* 4323347359089262\n\n"
             "⏳ *Чекаємо на оплату впродовж 15\\-ти хвилин*\n\n"
             "✅ Після оплати чекайте на підтвердження від адміністратора \\(\\@nastilnyy\\_tenis\\)",
             parse_mode='MarkdownV2'
