@@ -394,6 +394,7 @@ if __name__ == '__main__':
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         per_chat=True,
+        allow_reentry=True,
     )
 
     # Add the /info command handler
