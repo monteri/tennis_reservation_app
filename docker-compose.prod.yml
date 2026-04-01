@@ -10,6 +10,7 @@ services:
     volumes:
       - .:/app
       - sqlite_db:/app/db
+    restart: always
 
   nginx:
     image: nginx:latest
@@ -33,6 +34,7 @@ services:
     volumes:
       - .:/app
       - sqlite_db:/app/db
+    restart: always
 
   reservation_bot:
     build: .
@@ -43,6 +45,7 @@ services:
     volumes:
       - .:/app
       - sqlite_db:/app/db
+    restart: always
 
 volumes:
   sqlite_db:
